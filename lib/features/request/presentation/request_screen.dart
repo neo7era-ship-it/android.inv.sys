@@ -34,11 +34,26 @@ class _RequestScreenState extends State<RequestScreen> {
   final _reqCtrl = TextEditingController();
   List<MedicalItem> _searchResults = [];
 
+  // track whether department/requester text should be RTL
+  bool _deptIsRtl = false;
+  bool _reqIsRtl = false;
+
   @override
   void initState() {
     super.initState();
     _speech = SpeechService();
     _initSpeech();
+
+    // detect Arabic characters in department and requester and update direction
+    _deptCtrl.addListener(() {
+      final hasArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(_deptCtrl.text);
+      if (hasArabic != _deptIsRtl) setState(() => _deptIsRtl = hasArabic);
+    });
+    _reqCtrl.addListener(() {
+      final hasArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(_reqCtrl.text);
+      if (hasArabic != _reqIsRtl) setState(() => _reqIsRtl = hasArabic);
+    });
+
     if (widget.requestId != null) {
       context.read<RequestBloc>().add(LoadRequest(widget.requestId!));
     } else {
@@ -49,6 +64,9 @@ class _RequestScreenState extends State<RequestScreen> {
   Future<void> _initSpeech() async {
     _speechReady = await _speech.initialize();
     _speech.onResult.listen(_onSpeechResult);
+    // surface errors/status to UI for easier debugging
+    _speech.onError.listen((e) { if (mounted && e.isNotEmpty) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Speech error: $e'))); });
+    _speech.onStatus.listen((s) => debugPrint('speech status: $s'));
   }
 
   void _onSpeechResult(String result) {
@@ -99,22 +117,33 @@ class _RequestScreenState extends State<RequestScreen> {
   );
 
   Widget _buildEditor(RequestEditing state) => Column(children: [
-    ExpansionTile(initiallyExpanded: state.request.title == null, title: Text(state.request.title ?? 'Request Details', style: const TextStyle(fontWeight: FontWeight.w600)), subtitle: Text('${state.items.length} items • ${state.request.date}'), children: [
-      Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Column(children: [
+    ExpansionTile(initiallyExpanded: state.request.title == null, title: Text(state.request.title ?? 'Request Details', style: const TextStyle(fontWeight: FontWeight.w600)), subtitle: Text('${state.request.date}')),
+    Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Column(children: [
         TextField(controller: _titleCtrl, decoration: const InputDecoration(labelText: 'Title'), onChanged: (_) => _updateHeader()),
         const SizedBox(height: 8),
-        TextField(controller: _deptCtrl, decoration: const InputDecoration(labelText: 'Department'), onChanged: (_) => _updateHeader()),
+        TextField(
+          controller: _deptCtrl,
+          decoration: const InputDecoration(labelText: 'Department'),
+          onChanged: (_) => _updateHeader(),
+          textDirection: _deptIsRtl ? TextDirection.rtl : TextDirection.ltr,
+          textAlign: _deptIsRtl ? TextAlign.right : TextAlign.left,
+        ),
         const SizedBox(height: 8),
-        TextField(controller: _reqCtrl, decoration: const InputDecoration(labelText: 'Requested By'), onChanged: (_) => _updateHeader()),
+        TextField(
+          controller: _reqCtrl,
+          decoration: const InputDecoration(labelText: 'Requested By'),
+          onChanged: (_) => _updateHeader(),
+          textDirection: _reqIsRtl ? TextDirection.rtl : TextDirection.ltr,
+          textAlign: _reqIsRtl ? TextAlign.right : TextAlign.left,
+        ),
         const SizedBox(height: 16),
-      ])),
-    ]),
+    ])),
     Padding(padding: const EdgeInsets.all(12), child: Column(children: [
       Row(children: [Expanded(child: TextField(controller: _searchCtrl, onChanged: _doSearch, decoration: InputDecoration(hintText: 'Search items to add...', prefixIcon: const Icon(Icons.search), suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [
         if (_searchCtrl.text.isNotEmpty) IconButton(icon: const Icon(Icons.clear), onPressed: () { _searchCtrl.clear(); setState(() => _searchResults = []); }),
         IconButton(icon: const Icon(Icons.mic, color: AppTheme.primaryColor), onPressed: () => _startVoice('search')),
       ]))))]),
-      if (_searchResults.isNotEmpty) Container(constraints: const BoxConstraints(maxHeight: 200), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)), child: ListView.builder(shrinkWrap: true, itemCount: _searchResults.length, itemBuilder: (_, i) {
+      if (_searchResults.isNotEmpty) Container(constraints: BoxConstraints(maxHeight: 200), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)), child: ListView.builder(shrinkWrap: true, itemCount: _searchResults.length, itemBuilder: (_, i) {
         final item = _searchResults[i];
         return ListTile(dense: true, title: Text(item.itemName), trailing: const Icon(Icons.add_circle, color: AppTheme.accentColor), onTap: () {
           context.read<RequestBloc>().add(AddItemToRequest(itemName: item.itemName, itemId: item.id));
