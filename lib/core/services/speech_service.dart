@@ -5,13 +5,16 @@ class SpeechService {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _initialized = false;
   bool _isListening = false;
+
   final StreamController<String> _onResultController = StreamController<String>.broadcast();
   final StreamController<bool> _onListeningChangedController = StreamController<bool>.broadcast();
   final StreamController<String> _onErrorController = StreamController<String>.broadcast();
+  final StreamController<String> _onStatusController = StreamController<String>.broadcast();
 
   Stream<String> get onResult => _onResultController.stream;
   Stream<bool> get onListeningChanged => _onListeningChangedController.stream;
   Stream<String> get onError => _onErrorController.stream;
+  Stream<String> get onStatus => _onStatusController.stream;
   bool get isListening => _isListening;
   bool get isAvailable => _initialized && _speech.isAvailable;
 
@@ -19,8 +22,9 @@ class SpeechService {
     if (_initialized) return _speech.isAvailable;
     _initialized = await _speech.initialize(
       onError: (e) => _onErrorController.add(e.errorMsg),
-      onStatus: (s) {
-        if (s == 'notListening' || s == 'done') {
+      onStatus: (status) {
+        _onStatusController.add(status);
+        if (status == 'notListening' || status == 'done') {
           _isListening = false;
           _onListeningChangedController.add(false);
         }
@@ -45,39 +49,29 @@ class SpeechService {
       }
     }
     if (_isListening) await stopListening();
+
     _isListening = true;
     _onListeningChangedController.add(true);
+
     _speech.listen(
-  onResult: (r) {
-    // Emit interim results immediately so UI can show live text
-    if (r.recognizedWords.isNotEmpty) {
-      _onResultController.add(r.recognizedWords);
-    }
-    // When the result is final, update listening state
-    if (r.finalResult) {
-      _isListening = false;
-      _onListeningChangedController.add(false);
-    }
-  },
-  onStatus: (status) {
-    // status examples: 'listening', 'notListening', 'done'
-    if (status == 'listening') {
-      _isListening = true;
-      _onListeningChangedController.add(true);
-    } else if (status == 'notListening' || status == 'done') {
-      _isListening = false;
-      _onListeningChangedController.add(false);
-    }
-  },
-  listenOptions: stt.SpeechListenOptions(
-    localeId: localeId,
-    listenFor: listenFor,
-    pauseFor: pauseFor,
-    partialResults: true,
-    cancelOnError: true,
-    listenMode: stt.ListenMode.dictation,
-  ),
-);
+      onResult: (r) {
+        if (r.recognizedWords.isNotEmpty) {
+          _onResultController.add(r.recognizedWords);
+        }
+        if (r.finalResult) {
+          _isListening = false;
+          _onListeningChangedController.add(false);
+        }
+      },
+      listenOptions: stt.SpeechListenOptions(
+        localeId: localeId,
+        listenFor: listenFor,
+        pauseFor: pauseFor,
+        partialResults: true,
+        cancelOnError: true,
+        listenMode: stt.ListenMode.dictation,
+      ),
+    );
   }
 
   Future<void> stopListening() async {
@@ -100,5 +94,6 @@ class SpeechService {
     _onResultController.close();
     _onListeningChangedController.close();
     _onErrorController.close();
+    _onStatusController.close();
   }
 }
