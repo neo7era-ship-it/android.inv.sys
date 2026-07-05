@@ -6,7 +6,12 @@ class DocxUtils {
   static List<String> extractTextFromBytes(List<int> bytes) {
     final archive = ZipDecoder().decodeBytes(bytes);
     final results = <String>[];
-    final docFile = archive.findFile('word/document.xml');
+    ArchiveFile? docFile;
+    try {
+      docFile = archive.files.firstWhere((f) => f.name == 'word/document.xml');
+    } catch (e) {
+      docFile = null;
+    }
     if (docFile == null) {
       for (final file in archive) {
         if (file.name.endsWith('.xml') && file.name.contains('word/')) {
@@ -96,7 +101,7 @@ class DocxUtils {
     // Header row
     buf.writeln('      <w:tr>');
     for (final h in ['#', 'Item Name', 'Quantity', 'Notes']) {
-      buf.writeln('        <w:tc><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="1976D2"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="FFFFFF"/><w:sz w:val="22"/></w:rPr><w:t>$h</w:t></w:r></w:p></w:tc>');
+      buf.writeln('        <w:tc><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="1976D2"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="FFFFFF"/><w:sz w:val="22"/></w:rPr><w:t>${_esc(h)}</w:t></w:r></w:p></w:tc>');
     }
     buf.writeln('      </w:tr>');
     // Data rows
@@ -104,9 +109,9 @@ class DocxUtils {
       final item = items[i];
       final rowColor = i.isEven ? 'FFFFFF' : 'E3F2FD';
       buf.writeln('      <w:tr>');
-      buf.writeln('        <w:tc><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="$rowColor"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t>${item['index'] ?? i + 1}</w:t></w:r></w:p></w:tc>');
+      buf.writeln('        <w:tc><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="$rowColor"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t>${_esc((i + 1).toString())}</w:t></w:r></w:p></w:tc>');
       buf.writeln('        <w:tc><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="$rowColor"/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t>${_esc(item['itemName'] ?? '')}</w:t></w:r></w:p></w:tc>');
-      buf.writeln('        <w:tc><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="$rowColor"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t>${item['quantity'] ?? 0}</w:t></w:r></w:p></w:tc>');
+      buf.writeln('        <w:tc><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="$rowColor"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t>${_esc(item['quantity']?.toString() ?? '')}</w:t></w:r></w:p></w:tc>');
       buf.writeln('        <w:tc><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="$rowColor"/></w:tcPr><w:p><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t>${_esc(item['notes'] ?? '')}</w:t></w:r></w:p></w:tc>');
       buf.writeln('      </w:tr>');
     }
@@ -127,12 +132,25 @@ class DocxUtils {
         '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
         '</Relationships>';
 
-    archive.addFile(ArchiveFile('[Content_Types].xml', 0, utf8.encode(contentTypes)));
-    archive.addFile(ArchiveFile('_rels/.rels', 0, utf8.encode(rels)));
-    archive.addFile(ArchiveFile('word/_rels/document.xml.rels', 0, utf8.encode('<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>')));
-    archive.addFile(ArchiveFile('word/document.xml', 0, utf8.encode(buf.toString())));
+    // prepare bytes for each file part
+    final contentTypesBytes = utf8.encode(contentTypes);
+    final relsBytes = utf8.encode(rels);
+    final docRelsXml = '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+        '</Relationships>';
+    final docRelsBytes = utf8.encode(docRelsXml);
+    final documentXmlBytes = utf8.encode(buf.toString());
 
-    return ZipEncoder().encode(archive).toList();
+    // add files to archive with correct sizes
+    archive.addFile(ArchiveFile('[Content_Types].xml', contentTypesBytes.length, contentTypesBytes));
+    archive.addFile(ArchiveFile('_rels/.rels', relsBytes.length, relsBytes));
+    archive.addFile(ArchiveFile('word/_rels/document.xml.rels', docRelsBytes.length, docRelsBytes));
+    archive.addFile(ArchiveFile('word/document.xml', documentXmlBytes.length, documentXmlBytes));
+
+    final zipped = ZipEncoder().encode(archive);
+    if (zipped == null) return <int>[];
+    return zipped.toList();
   }
 
   static String _esc(String s) => s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
