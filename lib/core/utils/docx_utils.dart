@@ -116,23 +116,25 @@ class DocxUtils {
     buf.writeln('</w:document>');
 
     final archive = Archive();
-    final contentTypes = '<?xml version="1.0" encoding="UTF-8"?>'
-        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
-        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
-        '<Default Extension="xml" ContentType="application/xml"/>'
-        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
-        '</Types>';
-    final rels = '<?xml version="1.0" encoding="UTF-8"?>'
-        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
-        '</Relationships>';
+    
+// prepare bytes for each file part
+final contentTypesBytes = utf8.encode(contentTypes);
+final relsBytes = utf8.encode(rels);
+final docRelsBytes = utf8.encode('<?xml version="1.0" encoding="UTF-8"?>'
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+    '</Relationships>');
+final documentXmlBytes = utf8.encode(buf.toString());
 
-    archive.addFile(ArchiveFile('[Content_Types].xml', 0, utf8.encode(contentTypes)));
-    archive.addFile(ArchiveFile('_rels/.rels', 0, utf8.encode(rels)));
-    archive.addFile(ArchiveFile('word/_rels/document.xml.rels', 0, utf8.encode('<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>')));
-    archive.addFile(ArchiveFile('word/document.xml', 0, utf8.encode(buf.toString())));
+// add files to archive with correct sizes
+archive.addFile(ArchiveFile('[Content_Types].xml', contentTypesBytes.length, contentTypesBytes));
+archive.addFile(ArchiveFile('_rels/.rels', relsBytes.length, relsBytes));
+archive.addFile(ArchiveFile('word/_rels/document.xml.rels', docRelsBytes.length, docRelsBytes));
+archive.addFile(ArchiveFile('word/document.xml', documentXmlBytes.length, documentXmlBytes));
 
-    return ZipEncoder().encode(archive).toList();
+// return zipped bytes
+final zipped = ZipEncoder().encode(archive);
+return zipped == null ? <int>[] : zipped.toList();
   }
 
   static String _esc(String s) => s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
