@@ -38,43 +38,49 @@ class _DashboardPage extends StatelessWidget {
       IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportScreen())), icon: const Icon(Icons.upload_file), tooltip: 'Import Items'),
     ]),
     body: SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Card(child: Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Welcome to Medical Request', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppTheme.primaryColor)),
-            const SizedBox(height: 8),
-            Text('Create medical supply requests quickly using voice or manual entry.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600])),
-          ]))),
-          const SizedBox(height: 24),
-          Text('Quick Actions', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _ActionCard(icon: Icons.add_circle, title: 'New Request', color: AppTheme.primaryColor, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RequestScreen())))),
-            const SizedBox(width: 12),
-            Expanded(child: _ActionCard(icon: Icons.upload_file, title: 'Import Items', color: AppTheme.accentColor, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportScreen())))),
-          ]),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _ActionCard(icon: Icons.search, title: 'Browse Items', color: Colors.orange, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemsScreen())))),
-            const SizedBox(width: 12),
-            Expanded(child: _ActionCard(icon: Icons.history, title: 'History', color: Colors.purple, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())))),
-          ]),
-          const SizedBox(height: 24),
-          Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [Icon(Icons.lightbulb_outline, color: Colors.amber[700]), const SizedBox(width: 8), Text('Tips', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))]),
-            const SizedBox(height: 12),
-            _tip('Tap the microphone icon to enter items by voice'),
-            _tip('Supports Arabic and English speech recognition'),
-            _tip('Say numbers in Arabic or English for quantities'),
-            _tip('Export requests as Word documents to share'),
-          ]))),
-        ],
+     body: ListView(
+  padding: const EdgeInsets.all(16),
+  children: [
+    Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Welcome to Medical Request', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppTheme.primaryColor)),
+          const SizedBox(height: 8),
+          Text('Create medical supply requests quickly using voice or manual entry.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600])),
+        ]),
       ),
     ),
-  );
-
+    const SizedBox(height: 24),
+    Text('Quick Actions', style: Theme.of(context).textTheme.titleLarge),
+    const SizedBox(height: 12),
+    Row(children: [
+      Expanded(child: _ActionCard(icon: Icons.add_circle, title: 'New Request', color: AppTheme.primaryColor, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RequestScreen())))),
+      const SizedBox(width: 12),
+      Expanded(child: _ActionCard(icon: Icons.upload_file, title: 'Import Items', color: AppTheme.accentColor, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportScreen())))),
+    ]),
+    const SizedBox(height: 12),
+    Row(children: [
+      Expanded(child: _ActionCard(icon: Icons.search, title: 'Browse Items', color: Colors.orange, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ItemsScreen())))),
+      const SizedBox(width: 12),
+      Expanded(child: _ActionCard(icon: Icons.history, title: 'History', color: Colors.purple, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())))),
+    ]),
+    const SizedBox(height: 24),
+    Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [Icon(Icons.lightbulb_outline, color: Colors.amber[700]), const SizedBox(width: 8), Text('Tips', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600))]),
+          const SizedBox(height: 12),
+          _tip('Tap the microphone icon to enter items by voice'),
+          _tip('Supports Arabic and English speech recognition'),
+          _tip('Say numbers in Arabic or English for quantities'),
+          _tip('Export requests as Word documents to share'),
+        ]),
+      ),
+    ),
+  ],
+),
   Widget _tip(String t) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('• ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), Expanded(child: Text(t, style: const TextStyle(fontSize: 14)))]));
 }
 
