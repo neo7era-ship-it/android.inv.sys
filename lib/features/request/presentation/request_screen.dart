@@ -141,7 +141,7 @@ class _RequestScreenState extends State<RequestScreen> {
     Padding(padding: const EdgeInsets.all(12), child: Column(children: [
       Row(children: [Expanded(child: TextField(controller: _searchCtrl, onChanged: _doSearch, decoration: InputDecoration(hintText: 'Search items to add...', prefixIcon: const Icon(Icons.search), suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [
         if (_searchCtrl.text.isNotEmpty) IconButton(icon: const Icon(Icons.clear), onPressed: () { _searchCtrl.clear(); setState(() => _searchResults = []); }),
-        IconButton(icon: const Icon(Icons.mic, color: AppTheme.primaryColor), onPressed: () => _startVoice('search')),
+        IconButton(icon: const Icon(Icons.mic, color: AppTheme.primaryColor), onPressed: () async { final loc = await _speech.pickLocale(['ar_SA','ar-SA','ar','en_US']); await _startVoice('search', locale: loc ?? 'en_US'); }),
       ]))))]),
       if (_searchResults.isNotEmpty) Container(constraints: BoxConstraints(maxHeight: 200), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)), child: ListView.builder(shrinkWrap: true, itemCount: _searchResults.length, itemBuilder: (_, i) {
         final item = _searchResults[i];
@@ -163,7 +163,7 @@ class _RequestScreenState extends State<RequestScreen> {
           onNotesEdit: () => _notesDialog(item),
           isListeningQuantity: _voiceTarget == 'qty-${item.id}',
           isListeningNotes: _voiceTarget == 'notes-${item.id}',
-          onVoiceQuantity: () => _startVoice('qty-${item.id}', itemId: item.id),
+          onVoiceQuantity: () async { final loc = await _speech.pickLocale(['ar_SA','ar-SA','ar','en_US']); await _startVoice('qty-${item.id}', itemId: item.id, locale: loc ?? 'en_US'); },
           onVoiceNotes: () => _startVoice('notes-${item.id}', itemId: item.id, locale: 'ar_SA'),
         );
       },
