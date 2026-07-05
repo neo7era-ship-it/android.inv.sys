@@ -260,4 +260,3 @@ return zipped == null ? <int>[] : zipped.toList();
   }
 
   static String _esc(String s) => s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-}
