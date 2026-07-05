@@ -1,0 +1,60 @@
+name: medical_request_app
+description: A cross-platform medical supply request application with voice input support.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.7
+
+  # Database
+  sqflite: ^2.3.3+2
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # Word Document Processing (custom DOCX parsing in docx_utils.dart)
+  
+  # Speech Recognition
+  speech_to_text: ^7.0.0
+
+  # File Picking
+  file_picker: ^8.1.4
+
+  # Export / Share
+  share_plus: ^10.1.2
+  
+  # UI & UX
+  flutter_typeahead: ^5.2.0
+  
+  # Internationalization
+  intl: ^0.20.2
+  
+  # UUID
+  uuid: ^4.5.1
+
+  # Permission handling
+  permission_handler: ^11.3.1
+
+  # Icons
+  cupertino_icons: ^1.0.8
+  
+  # Archive for docx
+  archive: ^4.0.2
+  xml: ^6.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
