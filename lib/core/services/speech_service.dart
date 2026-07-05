@@ -36,6 +36,26 @@ class SpeechService {
 
   Future<bool> hasPermission() async => await _speech.hasPermission;
 
+  /// Return list of available locales on the device. Use this to choose a matching locale id like 'ar_SA' or 'ar-SA'.
+  Future<List<stt.LocaleName>> getAvailableLocales() async {
+    try {
+      final locales = await _speech.locales();
+      return locales;
+    } catch (_) {
+      return <stt.LocaleName>[];
+    }
+  }
+
+  /// Choose the first available locale from [preferred] or null if none found.
+  Future<String?> pickLocale(List<String> preferred) async {
+    final locales = await getAvailableLocales();
+    final ids = locales.map((l) => l.localeId).toList();
+    for (final p in preferred) {
+      if (ids.contains(p)) return p;
+    }
+    return ids.isNotEmpty ? ids.first : null;
+  }
+
   Future<void> startListening({
     String localeId = 'en_US',
     Duration listenFor = const Duration(seconds: 30),
