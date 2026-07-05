@@ -48,22 +48,36 @@ class SpeechService {
     _isListening = true;
     _onListeningChangedController.add(true);
     _speech.listen(
-      onResult: (r) {
-        if (r.finalResult) {
-          _onResultController.add(r.recognizedWords);
-          _isListening = false;
-          _onListeningChangedController.add(false);
-        }
-      },
-      listenOptions: stt.SpeechListenOptions(
-        localeId: localeId,
-        listenFor: listenFor,
-        pauseFor: pauseFor,
-        partialResults: true,
-        cancelOnError: true,
-        listenMode: stt.ListenMode.dictation,
-      ),
-    );
+  onResult: (r) {
+    // Emit interim results immediately so UI can show live text
+    if (r.recognizedWords.isNotEmpty) {
+      _onResultController.add(r.recognizedWords);
+    }
+    // When the result is final, update listening state
+    if (r.finalResult) {
+      _isListening = false;
+      _onListeningChangedController.add(false);
+    }
+  },
+  onStatus: (status) {
+    // status examples: 'listening', 'notListening', 'done'
+    if (status == 'listening') {
+      _isListening = true;
+      _onListeningChangedController.add(true);
+    } else if (status == 'notListening' || status == 'done') {
+      _isListening = false;
+      _onListeningChangedController.add(false);
+    }
+  },
+  listenOptions: stt.SpeechListenOptions(
+    localeId: localeId,
+    listenFor: listenFor,
+    pauseFor: pauseFor,
+    partialResults: true,
+    cancelOnError: true,
+    listenMode: stt.ListenMode.dictation,
+  ),
+);
   }
 
   Future<void> stopListening() async {
